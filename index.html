@@ -16,19 +16,12 @@
         
         #p_container { flex: 1; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; gap: 20px; }
 
-        /* 页面背景逻辑：支持自定义图片 */
         .page { 
             width: var(--a4-width); min-height: var(--a4-height); 
-            background: white; 
-            background-size: cover; 
-            background-position: center;
-            padding: 18mm 12mm; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-            box-sizing: border-box; 
-            position: relative; 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0; 
+            background: white; background-size: cover; background-position: center;
+            padding: 18mm 12mm; box-shadow: 0 0 10px rgba(0,0,0,0.5); 
+            box-sizing: border-box; position: relative; display: flex; 
+            flex-direction: column; flex-shrink: 0; 
         }
 
         .editor-panel { width: 380px; background: #fff; border-left: 1px solid #ccc; padding: 20px; overflow-y: auto; z-index: 100; }
@@ -40,9 +33,11 @@
             .page { transform: scale(0.46); transform-origin: top center; margin-bottom: -160mm; }
         }
         
-        .preview-grid { display: flex; flex-wrap: wrap; gap: 50px 6px; align-content: flex-start; }
+        /* 核心调整：水平间距减小至 3px，行间距保持 50px */
+        .preview-grid { display: flex; flex-wrap: wrap; gap: 50px 3px; align-content: flex-start; }
         
-        .note-unit { display: flex; flex-direction: column; align-items: center; width: 48px; cursor: pointer; border-radius: 4px; padding: 4px 0; position: relative; }
+        /* 音符单元宽度减小至 38px，使音符靠得更近 */
+        .note-unit { display: flex; flex-direction: column; align-items: center; width: 38px; cursor: pointer; border-radius: 4px; padding: 4px 0; position: relative; }
         .note-unit:hover { background-color: rgba(0,0,0,0.05); }
         .note-unit.selected { background-color: #e3f2fd !important; outline: 1px solid var(--active-blue); z-index: 10; }
         .note-unit.selected.insert-mode-active { outline: 2px solid var(--insert-orange); background-color: #fff3e0 !important; }
@@ -55,8 +50,8 @@
         .func { background: #f8f9fa; font-size: 12px; flex: 1; }
 
         .note-num-area { position: relative; display: flex; justify-content: center; align-items: center; height: 28px; width: 100%; margin-bottom: 10px; }
-        .note-num { font-size: 20px; font-weight: bold; position: relative; display: flex; align-items: center; pointer-events: none; }
-        .dot-after { margin-left: 2px; font-size: 15px; position: absolute; right: -8px; top: 0; }
+        .note-num { font-size: 19px; font-weight: bold; position: relative; display: flex; align-items: center; pointer-events: none; }
+        .dot-after { margin-left: 1px; font-size: 14px; position: absolute; right: -7px; top: 0; }
         .underline-1 { position: absolute; bottom: -4px; left: 10%; right: 10%; height: 1.5px; background: #000; }
         .underline-2 { position: absolute; bottom: -7px; left: 10%; right: 10%; height: 1.5px; background: #000; }
 
@@ -65,13 +60,13 @@
 
         .lyric-input { 
             width: 95%; border: none; border-bottom: 1px solid #eee; text-align: center; 
-            font-size: 14px; font-weight: bold; padding: 2px 0; margin-bottom: 6px; 
+            font-size: 13px; font-weight: bold; padding: 2px 0; margin-bottom: 6px; 
             background: transparent; outline: none; 
         }
 
-        .fingering-body { background-color: var(--bg-wood); border: 1.5px solid var(--border-wood); border-radius: 5px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; min-height: 115px; box-sizing: border-box; pointer-events: none; }
-        .fingering-img { display: flex; flex-direction: column; align-items: center; font-size: 20px; line-height: 0.8; width: 24px; }
-        .fingering-img span { display: flex; justify-content: center; align-items: center; height: 18px; width: 100%; }
+        .fingering-body { background-color: var(--bg-wood); border: 1.5px solid var(--border-wood); border-radius: 5px; padding: 3px 1px; display: flex; flex-direction: column; align-items: center; min-height: 110px; box-sizing: border-box; pointer-events: none; }
+        .fingering-img { display: flex; flex-direction: column; align-items: center; font-size: 19px; line-height: 0.8; width: 22px; }
+        .fingering-img span { display: flex; justify-content: center; align-items: center; height: 17px; width: 100%; }
 
         .mode-toggle { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f0f7ff; border-radius: 6px; margin-bottom: 15px; border: 1px solid #d0e0f0; }
 
@@ -145,7 +140,7 @@
     let inputArr = [];
     let selectedIndices = [];
     let clipboard = [];
-    let customBgUrl = ""; // 背景图片地址存储
+    let customBgUrl = "";
 
     function renderKeyboard() {
         const type = document.getElementById('type').value;
@@ -168,18 +163,12 @@
         const file = event.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                customBgUrl = e.target.result;
-                updateUI();
-            };
+            reader.onload = (e) => { customBgUrl = e.target.result; updateUI(); };
             reader.readAsDataURL(file);
         }
     }
 
-    function resetBackground() {
-        customBgUrl = "";
-        updateUI();
-    }
+    function resetBackground() { customBgUrl = ""; updateUI(); }
 
     function handleInput(n) {
         const isInsertMode = document.getElementById('insert-toggle').checked;
@@ -223,12 +212,7 @@
         updateUI();
     }
 
-    function copySelected() { 
-        if (selectedIndices.length > 0) {
-            clipboard = selectedIndices.sort((a,b)=>a-b).map(idx => ({...inputArr[idx]})); 
-        }
-    }
-    
+    function copySelected() { if (selectedIndices.length > 0) clipboard = selectedIndices.sort((a,b)=>a-b).map(idx => ({...inputArr[idx]})); }
     function pasteNotes() {
         if (clipboard.length > 0) {
             const targetIdx = selectedIndices.length > 0 ? Math.min(...selectedIndices) : inputArr.length;
@@ -278,7 +262,7 @@
                 unit.style.width = "10px";
                 unit.innerHTML = `<div style="height:170px; border-right:2px solid #ddd; margin: 0 4px;"></div>`;
             } else if (item.note === 'SPACE') {
-                unit.style.width = "20px";
+                unit.style.width = "12px";
                 unit.innerHTML = `<div style="height:170px;"></div>`;
             } else {
                 let colorClass = item.note.includes('(') ? 'is-low' : (item.note.includes('[') ? 'is-high' : 'is-mid');
@@ -307,7 +291,6 @@
             }
 
             grid.appendChild(unit);
-            
             if (grid.offsetHeight > 920) {
                 currentPage = createPage(container.children.length + 1, true);
                 container.appendChild(currentPage);
@@ -321,10 +304,7 @@
     function createPage(num, hideHeader = false) {
         const div = document.createElement('div');
         div.className = 'page';
-        // 应用背景图
-        if (customBgUrl) {
-            div.style.backgroundImage = `url(${customBgUrl})`;
-        }
+        if (customBgUrl) div.style.backgroundImage = `url(${customBgUrl})`;
         div.innerHTML = `
             <div class="page-header" style="${hideHeader ? 'display:none' : ''}">
                 <p style="text-align:center; font-size:26px; font-weight:bold; margin:0;">${document.getElementById('title').value || '乐谱标题'}</p>
