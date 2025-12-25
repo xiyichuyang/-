@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>竹笛洞洞谱编辑器</title>
+    <title>专业洞洞谱编辑器 - 稳定修复版</title>
     <style>
         :root {
             --color-low: #777; --color-mid: #000; --color-high: #b00;
@@ -49,7 +49,14 @@
         .is-high .note-num::before { content: "˙"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 24px; }
         .is-low .note-num::after { content: "."; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 20px; }
 
-        .lyric-input { width: 100%; border: none; border-bottom: 1px solid transparent; text-align: center; font-size: 14px; font-weight: bold; padding: 4px 0; margin-bottom: 8px; background: transparent; outline: none; }
+        /* 歌词输入框样式 */
+        .lyric-input { 
+            width: 100%; border: none; border-bottom: 1px solid #eee; text-align: center; 
+            font-size: 14px; font-weight: bold; padding: 4px 0; margin-bottom: 8px; 
+            background: transparent; outline: none; color: #333; 
+        }
+        .lyric-input:focus { border-bottom: 1px solid var(--active-blue); background: rgba(33, 150, 243, 0.05); }
+
         .fingering-body { background-color: var(--bg-wood); border: 1.5px solid var(--border-wood); border-radius: 6px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; min-height: 125px; box-sizing: border-box; }
         .fingering-img { display: flex; flex-direction: column; align-items: center; font-size: 22px; line-height: 0.8; width: 26px; }
         .fingering-img span { display: flex; justify-content: center; align-items: center; height: 20px; width: 100%; }
@@ -114,19 +121,8 @@
 
 <script>
     const c_b = '●', c_w = '○';
-    
-    // 筒音作1映射
-    const one_map = { 
-        '1':'bbbbbb', '2':'bbbbbw', '3':'bbbbww', '4':'bbbwww', '5':'bbwwww', '6':'bwwwww', '7':'wwwwww', 
-        '[1]':'wbbbbb', '[2]':'bbbbbw', '[3]':'bbbbww', '[4]':'bbbwww', '[5]':'bbwwww' 
-    };
-
-    // 筒音作5映射：修改了 [4] 的指法为 wbbbbw (2,3,4,5孔闭)
-    const five_map = { 
-        '(5)':'bbbbbb', '(6)':'bbbbbw', '(7)':'bbbbww', 
-        '1':'bbbwww', '2':'bbwwww', '3':'bwwwww', '4':'wbbwww', '5':'wbbbbb', '6':'bbbbbw', '7':'bbbbww', 
-        '[1]':'bbbwww', '[2]':'bbwwww', '[3]':'bwwwww', '[4]':'wbbbbw', '[5]':'wbbbbb' 
-    };
+    const one_map = { '1':'bbbbbb', '2':'bbbbbw', '3':'bbbbww', '4':'bbbwww', '5':'bbwwww', '6':'bwwwww', '7':'wwwwww', '[1]':'wbbbbb', '[2]':'bbbbbw', '[3]':'bbbbww', '[4]':'bbbwww', '[5]':'bbwwww' };
+    const five_map = { '(5)':'bbbbbb', '(6)':'bbbbbw', '(7)':'bbbbww', '1':'bbbwww', '2':'bbwwww', '3':'bwwwww', '4':'wbbwww', '5':'wbbbbb', '6':'bbbbbw', '7':'bbbbww', '[1]':'bbbwww', '[2]':'bbwwww', '[3]':'bwwwww', '[4]':'wbbbbw', '[5]':'wbbbbb' };
 
     let inputArr = [];
     let selectedIndices = [];
@@ -258,7 +254,9 @@
                             ${item.lines >= 2 ? '<div class="underline-2"></div>' : ''}
                         </span>
                     </div>
-                    <input type="text" class="lyric-input" value="${item.lyric}" placeholder="-" oninput="inputArr[${index}].lyric=this.value">
+                    <input type="text" class="lyric-input" value="${item.lyric}" placeholder="-" 
+                        onclick="event.stopPropagation()" 
+                        oninput="inputArr[${index}].lyric=this.value">
                     <div class="fingering-body"><div class="fingering-img">${fingerHtml}</div></div>
                 `;
             }
@@ -289,7 +287,6 @@
     }
 
     function changeType() { renderKeyboard(); inputArr = []; updateUI(); }
-    function clearAll() { if(confirm("清空全谱？")) { inputArr = []; updateUI(); } }
     
     renderKeyboard();
     updateUI();
