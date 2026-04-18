@@ -3,77 +3,531 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>竹笛洞洞谱编辑器</title>
+    <title>洞洞谱编辑器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --color-low: #777; --color-mid: #000; --color-high: #b00;
-            --bg-wood: #fff9e6; --border-wood: #e0d5b1;
-            --active-blue: #2196f3; --insert-orange: #ff9800;
-            --a4-width: 210mm; --a4-height: 297mm;
-        }
-        
-        body { font-family: "Microsoft YaHei", sans-serif; background: #525659; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        #p_container { flex: 1; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; gap: 20px; }
-
-        .page { 
-            width: var(--a4-width); min-height: var(--a4-height); 
-            background: white; background-size: cover; background-position: center;
-            padding: 18mm 12mm; box-shadow: 0 0 10px rgba(0,0,0,0.5); 
-            box-sizing: border-box; position: relative; display: flex; 
-            flex-direction: column; flex-shrink: 0; 
-        }
-
-        .editor-panel { width: 380px; background: #fff; border-left: 1px solid #ccc; padding: 20px; overflow-y: auto; z-index: 100; }
-
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .editor-panel { width: 100%; height: 45vh; border-left: none; border-top: 2px solid #ccc; position: fixed; bottom: 0; }
-            #p_container { height: 55vh; padding: 10px; margin-bottom: 45vh; }
-            .page { transform: scale(0.46); transform-origin: top center; margin-bottom: -160mm; }
-        }
-        
-        /* 核心调整：水平间距减小至 3px，行间距保持 50px */
-        .preview-grid { display: flex; flex-wrap: wrap; gap: 50px 3px; align-content: flex-start; }
-        
-        /* 音符单元宽度减小至 38px，使音符靠得更近 */
-        .note-unit { display: flex; flex-direction: column; align-items: center; width: 38px; cursor: pointer; border-radius: 4px; padding: 4px 0; position: relative; }
-        .note-unit:hover { background-color: rgba(0,0,0,0.05); }
-        .note-unit.selected { background-color: #e3f2fd !important; outline: 1px solid var(--active-blue); z-index: 10; }
-        .note-unit.selected.insert-mode-active { outline: 2px solid var(--insert-orange); background-color: #fff3e0 !important; }
-
-        .setting-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
-        .setting-group input, .setting-group select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .key-btn { min-width: 40px; height: 38px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: bold; background: white; }
-        .btn-low { color: var(--color-low); }
-        .btn-high { color: var(--color-high); }
-        .func { background: #f8f9fa; font-size: 12px; flex: 1; }
-
-        .note-num-area { position: relative; display: flex; justify-content: center; align-items: center; height: 28px; width: 100%; margin-bottom: 10px; }
-        .note-num { font-size: 19px; font-weight: bold; position: relative; display: flex; align-items: center; pointer-events: none; }
-        .dot-after { margin-left: 1px; font-size: 14px; position: absolute; right: -7px; top: 0; }
-        .underline-1 { position: absolute; bottom: -4px; left: 10%; right: 10%; height: 1.5px; background: #000; }
-        .underline-2 { position: absolute; bottom: -7px; left: 10%; right: 10%; height: 1.5px; background: #000; }
-
-        .is-high .note-num::before { content: "˙"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 24px; }
-        .is-low .note-num::after { content: "."; position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); font-size: 20px; }
-
-        .lyric-input { 
-            width: 95%; border: none; border-bottom: 1px solid #eee; text-align: center; 
-            font-size: 13px; font-weight: bold; padding: 2px 0; margin-bottom: 6px; 
-            background: transparent; outline: none; 
+            --primary: #2d5a4a;
+            --primary-light: #4a7d6b;
+            --accent: #e07a5f;
+            --accent-warm: #f4a261;
+            --bg-dark: #1a1a2e;
+            --bg-panel: #16213e;
+            --bg-card: #0f3460;
+            --text-primary: #eaeaea;
+            --text-secondary: #a0a0a0;
+            --note-low: #7eb8a2;
+            --note-mid: #f0e6d3;
+            --note-high: #e07a5f;
+            --success: #52b788;
+            --danger: #e63946;
+            --border-subtle: rgba(255,255,255,0.08);
+            --shadow-soft: 0 8px 32px rgba(0,0,0,0.3);
+            --glow: 0 0 20px rgba(224,122,95,0.3);
         }
 
-        .fingering-body { background-color: var(--bg-wood); border: 1.5px solid var(--border-wood); border-radius: 5px; padding: 3px 1px; display: flex; flex-direction: column; align-items: center; min-height: 110px; box-sizing: border-box; pointer-events: none; }
-        .fingering-img { display: flex; flex-direction: column; align-items: center; font-size: 19px; line-height: 0.8; width: 22px; }
-        .fingering-img span { display: flex; justify-content: center; align-items: center; height: 17px; width: 100%; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .mode-toggle { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f0f7ff; border-radius: 6px; margin-bottom: 15px; border: 1px solid #d0e0f0; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
 
+        /* 左侧预览区 */
+        #p_container {
+            flex: 1;
+            height: 100%;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 24px;
+            gap: 20px;
+            scroll-behavior: smooth;
+        }
+
+        #p_container::-webkit-scrollbar { width: 8px; }
+        #p_container::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+        #p_container::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 4px; }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            background: linear-gradient(180deg, #fffef8 0%, #faf8f0 100%);
+            padding: 18mm 12mm;
+            box-shadow: var(--shadow-soft);
+            border-radius: 4px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid #d4c4a8;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            letter-spacing: 2px;
+        }
+
+        .page-header p {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 6px;
+        }
+
+        .preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 4px;
+            align-content: flex-start;
+            flex: 1;
+        }
+
+        .page-footer {
+            position: absolute;
+            bottom: 10mm;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        /* 音符单元 */
+        .note-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 42px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            padding: 4px 2px;
+            position: relative;
+            background: transparent;
+        }
+
+        .note-unit:hover {
+            background: rgba(45, 90, 74, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .note-unit.selected {
+            background: linear-gradient(135deg, rgba(45, 90, 74, 0.15), rgba(45, 90, 74, 0.08));
+            outline: 2px solid var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .note-unit.selected.insert-mode-active {
+            outline: 2px solid var(--accent-warm);
+            background: linear-gradient(135deg, rgba(244, 162, 97, 0.15), rgba(244, 162, 97, 0.05));
+        }
+
+        .note-unit.selected.insert-mode-active::before {
+            content: "";
+            position: absolute;
+            left: -3px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, var(--accent-warm), #e07a5f);
+            border-radius: 2px;
+        }
+
+        /* 音符数字 */
+        .note-num-area {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 28px;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .note-num {
+            font-size: 20px;
+            font-weight: 700;
+            position: relative;
+            display: flex;
+            align-items: center;
+            color: #2c3e50;
+        }
+
+        .dot-after {
+            margin-left: 1px;
+            font-size: 14px;
+            position: absolute;
+            right: -7px;
+            top: 2px;
+            color: #2c3e50;
+        }
+
+        .underline-1 { position: absolute; bottom: -3px; left: 15%; right: 15%; height: 2px; background: #2c3e50; }
+        .underline-2 { position: absolute; bottom: -6px; left: 15%; right: 15%; height: 2px; background: #2c3e50; }
+
+        /* 高低音标记 */
+        .is-high .note-num::before {
+            content: "˙";
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--note-high);
+        }
+
+        .is-low .note-num::after {
+            content: ".";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--note-low);
+        }
+
+        /* 歌词输入 */
+        .lyric-input {
+            width: 100%;
+            border: none;
+            border-bottom: 1px solid transparent;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 0;
+            margin-bottom: 6px;
+            background: transparent;
+            outline: none;
+            color: #555;
+            transition: border-color 0.2s;
+        }
+
+        .lyric-input:focus {
+            border-bottom-color: var(--primary);
+        }
+
+        .lyric-input::placeholder { color: #ccc; }
+
+        /* 指法管 */
+        .fingering-body {
+            background: linear-gradient(180deg, #f5f0e6, #ebe5d8);
+            border: 1.5px solid #d4c4a8;
+            border-radius: 8px;
+            padding: 5px 2px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 110px;
+            box-sizing: border-box;
+        }
+
+        .fingering-img {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 18px;
+            line-height: 0.75;
+        }
+
+        .fingering-img span {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 16px;
+            width: 100%;
+        }
+
+        /* 音符符号 */
+        .note-dot {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .note-dot-empty {
+            color: #c9c9c9;
+            font-weight: 400;
+        }
+
+        .half-dot-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 16px;
+            overflow: visible;
+        }
+
+        .half-dot {
+            font-family: Arial, sans-serif;
+            font-style: normal;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        /* 小节线/间隔 */
+        .bar-line {
+            width: 8px;
+            height: 130px;
+            border-right: 2.5px solid #8b9a7d;
+            margin: 0 3px;
+        }
+
+        .space-unit {
+            width: 12px;
+            height: 130px;
+        }
+
+        /* 右侧编辑面板 */
+        .editor-panel {
+            width: 340px;
+            background: linear-gradient(180deg, var(--bg-panel), var(--bg-dark));
+            border-left: 1px solid var(--border-subtle);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .editor-panel::-webkit-scrollbar { width: 6px; }
+        .editor-panel::-webkit-scrollbar-track { background: transparent; }
+        .editor-panel::-webkit-scrollbar-thumb { background: var(--primary-light); border-radius: 3px; }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: "";
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, var(--accent), var(--accent-warm));
+            border-radius: 2px;
+        }
+
+        /* 模式切换 */
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            background: rgba(45, 90, 74, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(45, 90, 74, 0.3);
+        }
+
+        .mode-toggle.orange {
+            background: rgba(244, 162, 97, 0.15);
+            border-color: rgba(244, 162, 97, 0.3);
+        }
+
+        .mode-toggle input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--accent-warm);
+        }
+
+        .mode-toggle label {
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+
+        /* 输入框组 */
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .setting-group input,
+        .setting-group select {
+            padding: 12px 14px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .setting-group input:focus,
+        .setting-group select:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 0 0 3px rgba(45, 90, 74, 0.2);
+        }
+
+        .setting-group input::placeholder { color: var(--text-secondary); }
+
+        .setting-group select option {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        /* 按钮区域 */
+        .btn-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-section-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .btn-grid.two-col { grid-template-columns: repeat(2, 1fr); }
+
+        .key-btn {
+            padding: 10px 8px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .key-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .key-btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-low { color: var(--note-low); }
+        .btn-high { color: var(--note-high); }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border: none;
+        }
+
+        .btn-accent:hover {
+            box-shadow: 0 4px 15px rgba(45, 90, 74, 0.4);
+        }
+
+        .btn-warm {
+            background: linear-gradient(135deg, var(--accent-warm), var(--accent));
+            border: none;
+            color: white;
+        }
+
+        .btn-warm:hover {
+            box-shadow: 0 4px 15px rgba(244, 162, 97, 0.4);
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: rgba(230, 57, 70, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(230, 57, 70, 0.15);
+            border-color: var(--danger);
+        }
+
+        /* 键盘区 */
+        .keyboard-area {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .keyboard-row .key-btn {
+            min-width: 36px;
+            padding: 8px 6px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 操作按钮区 */
+        .action-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .action-btns .key-btn {
+            grid-column: span 1;
+        }
+
+        .action-btns .key-btn.full {
+            grid-column: span 2;
+        }
+
+        /* 打印样式 */
         @media print {
-            .editor-panel { display: none; }
-            #p_container { padding: 0; overflow: visible; display: block; }
-            .page { box-shadow: none; margin: 0; transform: scale(1); page-break-after: always; -webkit-print-color-adjust: exact; }
+            body {
+                background: white !important;
+                overflow: visible !important;
+            }
+            .editor-panel { display: none !important; }
+            #p_container {
+                padding: 0 !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+            .page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: always;
+                border-radius: 0;
+            }
+            .note-unit.selected {
+                outline: none !important;
+                background: none !important;
+                box-shadow: none !important;
+            }
         }
     </style>
 </head>
@@ -82,108 +536,132 @@
 <div id="p_container" onclick="deselectAll(event)"></div>
 
 <div class="editor-panel">
-    <h3 style="margin-top:0">控制面板</h3>
-    <div class="mode-toggle">
-        <input type="checkbox" id="insert-toggle" onchange="updateUI()">
-        <label for="insert-toggle" style="font-size:14px; font-weight:bold;">开启“插入模式”</label>
-    </div>
+    <div class="panel-title">洞洞谱编辑器</div>
 
     <div class="setting-group">
-        <input type="text" id="title" placeholder="歌曲标题" oninput="updateUI()">
-        <input type="text" id="subtitle" placeholder="曲目信息 (1=D 4/4)" oninput="updateUI()">
-        <select id="type" onchange="changeType()">
-            <option value="5">筒音作5</option>
-            <option value="1">筒音作1</option>
+        <input type="text" id="title" placeholder="♪ 歌曲标题">
+        <input type="text" id="subtitle" placeholder="调式 | 拍号 (如: 1=D 4/4)">
+        <select id="type">
+            <option value="5">筒音作 5</option>
+            <option value="1">筒音作 1</option>
         </select>
     </div>
 
-    <div style="margin-bottom:15px;">
-        <button class="key-btn func" style="width:100%; height:32px; margin-bottom:5px;" onclick="document.getElementById('bgInput').click()">🖼️ 更换输出页背景图</button>
-        <input type="file" id="bgInput" style="display:none" accept="image/*" onchange="changeBackground(event)">
-        <button class="key-btn func" style="width:100%; height:32px; font-size:11px;" onclick="resetBackground()">重置为纯白背景</button>
+    <div class="mode-toggle" id="mode-ui">
+        <input type="checkbox" id="insert-toggle">
+        <label for="insert-toggle">插入模式</label>
     </div>
 
-    <div style="margin-bottom:15px; display:grid; grid-template-columns: repeat(3, 1fr); gap:4px;">
-        <button class="key-btn func" onclick="modifyRhythm('line', 1)">减时线+</button>
-        <button class="key-btn func" onclick="modifyRhythm('line', -1)">减时线-</button>
-        <button class="key-btn func" onclick="modifyRhythm('dot', 1)">附点</button>
-        <button class="key-btn func" onclick="copySelected()">复制</button>
-        <button class="key-btn func" onclick="pasteNotes()">粘贴</button>
-        <button class="key-btn func" onclick="handleInput('-')">延时线</button>
+    <div class="btn-section">
+        <span class="btn-section-title">节奏编辑</span>
+        <div class="btn-grid">
+            <button class="key-btn" onclick="modifyRhythm('line', 1)">减时线 +</button>
+            <button class="key-btn" onclick="modifyRhythm('line', -1)">减时线 −</button>
+            <button class="key-btn" onclick="modifyRhythm('dot', 1)">附点</button>
+        </div>
     </div>
 
-    <div class="keyboard-area" style="display:flex; flex-direction:column; gap:8px;">
-        <div id="row-low" style="display:flex; gap:3px; flex-wrap:wrap;"></div>
-        <div id="row-mid" style="display:flex; gap:3px; flex-wrap:wrap;"></div>
-        <div id="row-high" style="display:flex; gap:3px; flex-wrap:wrap;"></div>
+    <div class="btn-section">
+        <span class="btn-section-title">编辑</span>
+        <div class="btn-grid">
+            <button class="key-btn" onclick="copySelected()">复制</button>
+            <button class="key-btn" onclick="pasteNotes()">粘贴</button>
+            <button class="key-btn" onclick="handleInput('-')">延时线</button>
+            <button class="key-btn" onclick="handleInput('BAR')">小节线</button>
+            <button class="key-btn" onclick="handleInput('SPACE')">间隔</button>
+            <button class="key-btn btn-danger" onclick="backspace()">删除</button>
+        </div>
     </div>
 
-    <div style="display:flex; gap:4px; margin-top:15px; flex-wrap: wrap;">
-        <button class="key-btn func" onclick="handleInput('BAR')">小节线</button>
-        <button class="key-btn func" onclick="handleInput('SPACE')">间隔</button>
-        <button class="key-btn func" onclick="backspace()" style="color:red">删除选中</button>
+    <div class="btn-section">
+        <span class="btn-section-title">陶笛指法</span>
+        <div class="keyboard-area">
+            <div id="row-low" class="keyboard-row"></div>
+            <div id="row-mid" class="keyboard-row"></div>
+            <div id="row-high" class="keyboard-row"></div>
+        </div>
     </div>
 
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-top:15px;">
-        <button class="key-btn func" onclick="exportProject()">导出存档</button>
-        <button class="key-btn func" onclick="document.getElementById('fileInput').click()">读取存档</button>
+    <div class="action-btns">
+        <button class="key-btn btn-accent" onclick="exportProject()">导出</button>
+        <button class="key-btn btn-accent" onclick="document.getElementById('fileInput').click()">导入</button>
         <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importProject(event)">
-        <button class="key-btn func" style="background:#2196f3; color:white; border:none; grid-column: span 2;" onclick="window.print()">保存为 PDF</button>
+        <button class="key-btn btn-warm full" onclick="window.print()">导出 PDF</button>
+        <button class="key-btn btn-danger full" onclick="clearAll()">清空全谱</button>
     </div>
 </div>
 
 <script>
-    const c_b = '●', c_w = '○';
-    const one_map = { '1':'bbbbbb', '2':'bbbbbw', '3':'bbbbww', '4':'bbbwww', '5':'bbwwww', '6':'bwwwww', '7':'wwwwww', '[1]':'wbbbbb', '[2]':'bbbbbw', '[3]':'bbbbww', '[4]':'bbbwww', '[5]':'bbwwww' };
-    const five_map = { '(5)':'bbbbbb', '(6)':'bbbbbw', '(7)':'bbbbww', '1':'bbbwww', '2':'bbwwww', '3':'bwwwww', '4':'wbbwww', '5':'wbbbbb', '6':'bbbbbw', '7':'bbbbww', '[1]':'bbbwww', '[2]':'bbwwww', '[3]':'bwwwww', '[4]':'wbbbbw', '[5]':'wbbbbb' };
+    const c_b = '<span class="note-dot">●</span>';
+    const c_w = '<span class="note-dot-empty">○</span>';
+    const c_h = '<i class="half-dot">◐</i>';
+
+    const one_map = {
+        '1':'bbbbbb', '2':'bbbbbw', '3':'bbbbww', '4':'bbbwww',
+        '5':'bbwwww', '6':'bwwwww', '7':'wwwwww',
+        '[1]':'wbbbbb', '[2]':'bbbbbw', '[3]':'bbbbww', '[4]':'bbbwww', '[5]':'bbwwww'
+    };
+    const five_map = {
+        '(5)':'bbbbbb', '(6)':'bbbbbw', '(7)':'bbbbww', '1':'bbbwww', '2':'bbwwww',
+        '3':'bwwwww', '4':'wbbwww', '5':'wbbbbb', '6':'bbbbbw', '7':'bbbbww',
+        '[1]':'bbbwww', '[2]':'bbwwww', '[3]':'bwwwww', '[4]':'hwwwww', '[5]':'wbbbbb'
+    };
 
     let inputArr = [];
     let selectedIndices = [];
     let clipboard = [];
-    let customBgUrl = "";
+
+    // 初始化
+    document.getElementById('title').addEventListener('input', updateUI);
+    document.getElementById('subtitle').addEventListener('input', updateUI);
+    document.getElementById('type').addEventListener('change', changeType);
+    renderKeyboard();
+    updateUI();
 
     function renderKeyboard() {
         const type = document.getElementById('type').value;
-        const layout = type === '5' ? 
+        const layout = type === '5' ?
             { low: ['(5)', '(6)', '(7)'], mid: ['1', '2', '3', '4', '5', '6', '7'], high: ['[1]', '[2]', '[3]', '[4]', '[5]'] } :
             { low: [], mid: ['1', '2', '3', '4', '5', '6', '7'], high: ['[1]', '[2]', '[3]', '[4]', '[5]'] };
+
         const draw = (id, notes, cls) => {
-            const el = document.getElementById(id); el.innerHTML = '';
+            const el = document.getElementById(id);
+            el.innerHTML = '';
             notes.forEach(n => {
                 const b = document.createElement('button');
-                b.className = `key-btn ${cls}`; b.textContent = n;
-                b.onclick = (e) => { e.stopPropagation(); handleInput(n); }; 
+                b.className = `key-btn ${cls}`;
+                b.textContent = n;
+                b.onclick = (e) => { e.stopPropagation(); handleInput(n); };
                 el.appendChild(b);
             });
         };
-        draw('row-low', layout.low, 'btn-low'); draw('row-mid', layout.mid, 'btn-mid'); draw('row-high', layout.high, 'btn-high');
+        draw('row-low', layout.low, 'btn-low');
+        draw('row-mid', layout.mid, 'btn-mid');
+        draw('row-high', layout.high, 'btn-high');
     }
-
-    function changeBackground(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => { customBgUrl = e.target.result; updateUI(); };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function resetBackground() { customBgUrl = ""; updateUI(); }
 
     function handleInput(n) {
         const isInsertMode = document.getElementById('insert-toggle').checked;
         const newItem = { note: n, lyric: '', lines: 0, dot: false };
+
         if (selectedIndices.length === 1) {
             let idx = selectedIndices[0];
-            if (isInsertMode) { inputArr.splice(idx, 0, newItem); selectedIndices = [idx + 1]; }
-            else { inputArr[idx].note = n; selectedIndices = []; }
-        } else { inputArr.push(newItem); }
+            if (isInsertMode) {
+                inputArr.splice(idx, 0, newItem);
+                selectedIndices = [idx + 1];
+            } else {
+                inputArr[idx].note = n;
+                selectedIndices = [];
+            }
+        } else {
+            inputArr.push(newItem);
+        }
         updateUI();
     }
 
     function modifyRhythm(type, val) {
         selectedIndices.forEach(idx => {
-            if (inputArr[idx].note === 'BAR' || inputArr[idx].note === 'SPACE') return;
+            if (!inputArr[idx] || inputArr[idx].note === 'BAR' || inputArr[idx].note === 'SPACE') return;
             if (type === 'line') inputArr[idx].lines = Math.max(0, Math.min(2, (inputArr[idx].lines || 0) + val));
             if (type === 'dot') inputArr[idx].dot = !inputArr[idx].dot;
         });
@@ -202,17 +680,29 @@
         updateUI();
     }
 
-    function deselectAll(e) { if(e.target.id === "p_container" || e.target.className === "page") { selectedIndices = []; updateUI(); } }
-    
+    function deselectAll(e) {
+        if(e.target.id === "p_container" || e.target.className === "page" || e.target.classList.contains("preview-grid")) {
+            selectedIndices = [];
+            updateUI();
+        }
+    }
+
     function backspace() {
         if (selectedIndices.length > 0) {
             selectedIndices.sort((a,b)=>b-a).forEach(idx => inputArr.splice(idx, 1));
             selectedIndices = [];
-        } else { inputArr.pop(); }
+        } else if (inputArr.length > 0) {
+            inputArr.pop();
+        }
         updateUI();
     }
 
-    function copySelected() { if (selectedIndices.length > 0) clipboard = selectedIndices.sort((a,b)=>a-b).map(idx => ({...inputArr[idx]})); }
+    function copySelected() {
+        if (selectedIndices.length > 0) {
+            clipboard = selectedIndices.sort((a,b)=>a-b).map(idx => ({...inputArr[idx]}));
+        }
+    }
+
     function pasteNotes() {
         if (clipboard.length > 0) {
             const targetIdx = selectedIndices.length > 0 ? Math.min(...selectedIndices) : inputArr.length;
@@ -222,57 +712,91 @@
     }
 
     function exportProject() {
-        const data = { title: document.getElementById('title').value, subtitle: document.getElementById('subtitle').value, type: document.getElementById('type').value, inputArr };
+        const data = {
+            title: document.getElementById('title').value,
+            subtitle: document.getElementById('subtitle').value,
+            type: document.getElementById('type').value,
+            inputArr
+        };
         const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = (document.getElementById('title').value || "存档") + ".json"; a.click();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (data.title || "乐谱存档") + ".json";
+        a.click();
     }
 
-    function importProject(event) {
-        const file = event.target.files[0]; if (!file) return;
+    function importProject(e) {
+        const file = e.target.files[0];
+        if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const data = JSON.parse(e.target.result);
-            document.getElementById('title').value = data.title || "";
-            document.getElementById('subtitle').value = data.subtitle || "";
-            document.getElementById('type').value = data.type || "5";
-            inputArr = data.inputArr || []; renderKeyboard(); updateUI();
+        reader.onload = (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                document.getElementById('title').value = data.title || "";
+                document.getElementById('subtitle').value = data.subtitle || "";
+                document.getElementById('type').value = data.type || "5";
+                inputArr = data.inputArr || [];
+                renderKeyboard();
+                updateUI();
+            } catch(err) {
+                alert('文件格式错误');
+            }
         };
         reader.readAsText(file);
     }
 
+    function changeType() {
+        renderKeyboard();
+        inputArr = [];
+        selectedIndices = [];
+        updateUI();
+    }
+
+    function clearAll() {
+        if(confirm("确定要清空所有内容吗？")) {
+            inputArr = [];
+            selectedIndices = [];
+            updateUI();
+        }
+    }
+
     function updateUI() {
         const container = document.getElementById('p_container');
+        const isInsertMode = document.getElementById('insert-toggle').checked;
         const currentScrollTop = container.scrollTop;
-        container.innerHTML = ''; 
+
+        container.innerHTML = '';
 
         let currentPage = createPage(1);
         container.appendChild(currentPage);
         let grid = currentPage.querySelector('.preview-grid');
+
         const currentMap = document.getElementById('type').value === '1' ? one_map : five_map;
 
         inputArr.forEach((item, index) => {
+            if (!item) return;
             const isSelected = selectedIndices.includes(index);
             const unit = document.createElement('div');
             unit.className = 'note-unit' + (isSelected ? ' selected' : '');
-            if(isSelected && document.getElementById('insert-toggle').checked && selectedIndices.length === 1) unit.classList.add('insert-mode-active');
+            if(isSelected && isInsertMode && selectedIndices.length === 1) unit.classList.add('insert-mode-active');
             unit.onclick = (e) => selectNote(index, e);
 
             if (item.note === 'BAR') {
-                unit.style.width = "10px";
-                unit.innerHTML = `<div style="height:170px; border-right:2px solid #ddd; margin: 0 4px;"></div>`;
+                unit.innerHTML = `<div class="bar-line"></div>`;
             } else if (item.note === 'SPACE') {
-                unit.style.width = "12px";
-                unit.innerHTML = `<div style="height:170px;"></div>`;
+                unit.innerHTML = `<div class="space-unit"></div>`;
             } else {
-                let colorClass = item.note.includes('(') ? 'is-low' : (item.note.includes('[') ? 'is-high' : 'is-mid');
-                let displayNum = item.note.replace(/[()\[\]]/g,'');
+                let colorClass = 'is-mid';
+                let displayNum = item.note;
+                if (item.note.includes('(')) { colorClass = 'is-low'; displayNum = item.note.replace(/[()]/g,''); }
+                else if (item.note.includes('[')) { colorClass = 'is-high'; displayNum = item.note.replace(/[\[\]]/g,''); }
 
                 let fingerHtml = '';
-                if (item.note !== '-') {
-                    const fingerStr = currentMap[item.note] || 'wwwwww';
+                if (item.note !== '-' && currentMap[item.note]) {
+                    const fingerStr = currentMap[item.note];
                     for(let char of fingerStr) {
-                        fingerHtml += `<span>${char === 'b' ? c_b : c_w}</span>`;
+                        if(char === 'h') fingerHtml += `<div class="half-dot-wrapper">${c_h}</div>`;
+                        else fingerHtml += `<span>${char === 'b' ? c_b : c_w}</span>`;
                     }
                 }
 
@@ -284,41 +808,40 @@
                             ${item.lines >= 2 ? '<div class="underline-2"></div>' : ''}
                         </span>
                     </div>
-                    <input type="text" class="lyric-input" value="${item.lyric}" placeholder="-" 
-                        onclick="event.stopPropagation()" oninput="inputArr[${index}].lyric=this.value">
+                    <input type="text" class="lyric-input" value="${item.lyric || ''}" placeholder="-" onclick="event.stopPropagation()" oninput="inputArr[${index}].lyric=this.value">
                     <div class="fingering-body"><div class="fingering-img">${fingerHtml}</div></div>
                 `;
             }
 
             grid.appendChild(unit);
-            if (grid.offsetHeight > 920) {
-                currentPage = createPage(container.children.length + 1, true);
+
+            // 自动分页
+            if (grid.children.length > 28) {
+                currentPage = createPage(container.children.length + 1);
                 container.appendChild(currentPage);
                 grid = currentPage.querySelector('.preview-grid');
-                grid.appendChild(unit);
             }
         });
+
         container.scrollTop = currentScrollTop;
     }
 
-    function createPage(num, hideHeader = false) {
+    function createPage(num) {
         const div = document.createElement('div');
         div.className = 'page';
-        if (customBgUrl) div.style.backgroundImage = `url(${customBgUrl})`;
+        const titleText = document.getElementById('title').value || '未命名乐谱';
+        const subText = document.getElementById('subtitle').value || '1=D 4/4';
         div.innerHTML = `
-            <div class="page-header" style="${hideHeader ? 'display:none' : ''}">
-                <p style="text-align:center; font-size:26px; font-weight:bold; margin:0;">${document.getElementById('title').value || '乐谱标题'}</p>
-                <p style="text-align:center; font-size:14px; margin-top:8px; margin-bottom:20px;">${document.getElementById('subtitle').value || '1=D 4/4'}</p>
+            <div class="page-header">
+                <h1>${titleText}</h1>
+                <p>${subText}</p>
             </div>
             <div class="preview-grid"></div>
-            <div style="position:absolute; bottom:10mm; left:50%; transform:translateX(-50%); font-size:12px; color:#bbb;">- ${num} -</div>
+            <div class="page-footer">— 第 ${num} 页 —</div>
         `;
         return div;
     }
-
-    function changeType() { renderKeyboard(); inputArr = []; updateUI(); }
-    renderKeyboard();
-    updateUI();
 </script>
+
 </body>
 </html>
